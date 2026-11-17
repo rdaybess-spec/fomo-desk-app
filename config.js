@@ -1,0 +1,1 @@
+window.DESK_CONFIG = { url: 'https://chuoldhwawcpbdcjelsi.supabase.co', anon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNodW9sZGh3YXdjcGJkY2plbHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MTQ5MjgsImV4cCI6MjExMDQ5MDkyOH0.tKBO4n7XZW76P6_5VBhPFMJN6Mug0iX1bzmniVzpJfE' };
