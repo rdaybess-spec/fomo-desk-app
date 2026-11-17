@@ -129,7 +129,7 @@
     })));
     if (b.bot === 'analyst') {
       var s = h('div', { cls: 'strips' }); for (var i = 1; i <= 8; i++) { var l = (b.layers || []).filter(function (x) { return x.n === i; })[0]; s.appendChild(h('i', { cls: l ? (l.pass ? 'g' : 'r') : '' })); }
-      kids.push(s, h('div', {}, [h('span', { cls: 'ring', text: num(b.score) ? String(b.score) : '—', style: 'color:' + (num(b.score) && b.score >= 70 ? 'var(--green)' : 'var(--t2)') }), h('span', { cls: 's', text: num(b.social) && b.social ? '  Social +' + b.social : '  Social: off' })]));
+      kids.push(s, h('div', {}, [h('span', { cls: 'ring', text: num(b.score) ? String(b.score) : '—', style: 'color:' + (num(b.score) && b.score >= 70 ? 'var(--green)' : 'var(--t2)') }), h('span', { cls: 's', text: num(b.social) && b.social ? '  Social +' + b.social : (b.social_plan === 'A' || b.social_plan === 'B') ? '  Social: on · waiting for an 8/8 coin' : '  Social: off' })]));
     }
     if (b.bot === 'brain') kids.push(h('div', { text: b.last ? money(b.last.usd) + ' · ' + (num(b.last.pct) ? b.last.pct + '% of cash' : '') : 'Sizing' }), h('div', { cls: 's', text: b.rule || '' }));
     if (b.bot === 'executor') kids.push(h('div', { text: b.bar || 'Idle' }));
