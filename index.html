@@ -1,244 +1,127 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="FOMO Desk">
-  <meta name="theme-color" content="#000000">
-  <meta name="format-detection" content="telephone=no">
-  <title>FOMO Desk</title>
-  <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <link rel="icon" href="./apple-touch-icon.png">
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #000000;
-      --card: #1c1c1e;
-      --text: #f5f5f7;
-      --muted: #8e8e93;
-      --line: rgba(255, 255, 255, 0.08);
-      --green: #30d158;
-      --red: #ff453a;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    body {
-      min-height: 100vh;
-      min-height: 100dvh;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
-
-    .app {
-      min-height: 100vh;
-      min-height: 100dvh;
-      padding:
-        calc(14px + env(safe-area-inset-top))
-        calc(16px + env(safe-area-inset-right))
-        calc(24px + env(safe-area-inset-bottom))
-        calc(16px + env(safe-area-inset-left));
-    }
-
-    .bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      min-height: 28px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 17px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 500;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--muted);
-      flex: 0 0 auto;
-    }
-
-    .dot.ok { background: var(--green); box-shadow: 0 0 8px rgba(48, 209, 88, 0.85); }
-    .dot.bad { background: var(--red); box-shadow: 0 0 8px rgba(255, 69, 58, 0.75); }
-
-    .gate {
-      margin: 26vh auto 0;
-      max-width: 18em;
-      text-align: center;
-      text-wrap: balance;
-      font-size: 22px;
-      font-weight: 600;
-      line-height: 1.45;
-      letter-spacing: -0.02em;
-    }
-
-    .card {
-      margin-top: 22px;
-      padding: 22px 20px 20px;
-      background: var(--card);
-      border-radius: 22px;
-    }
-
-    .eyebrow {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .cash {
-      margin: 8px 0 0;
-      font-size: clamp(42px, 13vw, 64px);
-      font-weight: 700;
-      letter-spacing: -0.045em;
-      line-height: 1.05;
-      font-variant-numeric: tabular-nums;
-      text-align: right;
-      width: 100%;
-    }
-
-    .mode {
-      display: inline-block;
-      margin: 14px 0 0;
-      padding: 5px 11px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-    }
-
-    .mode.paper { background: #2c2c2e; color: #f2f2f7; }
-    .mode.live { background: rgba(48, 209, 88, 0.16); color: var(--green); }
-
-    .screen { margin-top: 26px; }
-
-    h2 {
-      margin: 0 0 12px;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    .shot {
-      border-radius: 18px;
-      overflow: hidden;
-      background: #111;
-      border: 1px solid var(--line);
-    }
-
-    .shot img {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    .shot-time {
-      display: flex;
-      gap: 6px;
-      margin: 8px 2px 0;
-      color: var(--muted);
-      font-size: 13px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .facts {
-      list-style: none;
-      margin: 18px 0 0;
-      padding: 0;
-      background: var(--card);
-      border-radius: 18px;
-      overflow: hidden;
-    }
-
-    .facts li {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 16px;
-      padding: 13px 16px;
-      border-top: 1px solid var(--line);
-    }
-
-    .facts li:first-child { border-top: 0; }
-
-    .facts .k {
-      color: var(--muted);
-      font-size: 15px;
-      flex: 0 1 auto;
-    }
-
-    .facts .v {
-      font-size: 15px;
-      font-weight: 600;
-      text-align: left;
-      direction: ltr;
-      unicode-bidi: isolate;
-      white-space: pre-wrap;
-      word-break: break-word;
-      flex: 1 1 auto;
-    }
-
-    [hidden] { display: none !important; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FOMO Desk">
+<meta name="theme-color" content="#000000">
+<meta name="format-detection" content="telephone=no">
+<title>FOMO Desk</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<style>
+:root{color-scheme:dark;--bg:#000;--text:#fff;--t2:rgba(235,235,245,.6);--t3:rgba(235,235,245,.3);
+--sep:rgba(84,84,88,.55);--c1:#1c1c1e;--c2:#2c2c2e;--green:#00d35a;--red:#ff453a;--orange:#ff9f0a;
+--cyan:#64d2ff;--blue:#0a84ff;--yellow:#ffd60a;--pink:#ff6b9a;--purple:#bf5af2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:15px/1.35 -apple-system,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+font-variant-numeric:tabular-nums;min-height:100dvh}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,"SF Mono",monospace}
+main{padding:calc(8px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+.nav{display:flex;align-items:center;gap:12px;min-height:44px}
+.avatar{width:32px;height:32px;border-radius:16px;background:var(--c2);border:0}
+.navtitle{flex:1;font-weight:600;font-size:17px;color:var(--text);background:none;border:0;text-align:left;padding:0;min-height:44px}
+.iconbtn{width:44px;height:44px;border:0;background:none;color:var(--text);font-size:20px;position:relative}
+.bell .dot{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:4px;background:var(--red)}
+.search{display:none;margin:4px 0 8px}.search.on{display:block}
+.search input{width:100%;height:36px;border-radius:10px;border:0;background:var(--c1);color:var(--text);padding:0 12px;font-size:16px}
+.errrow{background:var(--red);color:#fff;border-radius:10px;padding:8px 12px;margin:6px 0;font-size:13px}
+.balrow{display:flex;align-items:center;gap:10px;margin-top:6px}
+.balance{font:700 66px/1 -apple-system,"SF Pro Display",system-ui;letter-spacing:-1.5px;display:flex}
+.digit{display:inline-block;overflow:hidden;height:1em;position:relative}
+.digit span{display:block;transition:transform .6s ease-out}
+@media (prefers-reduced-motion:reduce){.digit span{transition:none}}
+.pill{display:inline-block;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600}
+.paper{background:var(--orange);color:#000}.mult{background:var(--green);color:#000}
+.today{color:var(--green);font-size:17px;margin:6px 0 10px}.today.neg{color:var(--red)}
+canvas{display:block;width:100%}
+.ranges{display:flex;justify-content:space-between;margin:8px 0 16px}
+.ranges button{min-width:44px;min-height:44px;border:0;background:none;color:var(--t2);font-weight:600;border-radius:10px}
+.ranges button.on{color:var(--green);background:var(--c1)}
+.screen{position:relative;aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:var(--c1);margin-bottom:8px}
+.screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .2s}
+.screen .tl,.screen .tr{position:absolute;top:10px;font-size:12px;background:rgba(0,0,0,.55);border-radius:999px;padding:3px 9px;z-index:2}
+.screen .tl{left:10px}.screen .tr{right:10px}
+.ldot{display:inline-block;width:7px;height:7px;border-radius:4px;margin-right:5px;background:var(--t3)}.ldot.live{background:var(--red)}
+.lastorder{color:var(--t2);font-size:13px;margin:0 0 18px}
+.checks span{margin-left:6px}.ok{color:var(--green)}.no{color:var(--red)}.na{color:var(--t3)}
+h2{font-size:20px;margin:18px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+h2 a,h2 button{font-size:15px;color:var(--blue);text-decoration:none;background:none;border:0;font-weight:400}
+.carousel{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.carousel::-webkit-scrollbar{display:none}
+.card{background:var(--c1);border-radius:16px;padding:14px}
+.carousel .card{min-width:78%;scroll-snap-align:start}
+.bname{font-weight:600;display:flex;align-items:center;gap:8px}
+.sdot{width:8px;height:8px;border-radius:4px;background:var(--t3)}.sdot.on{background:var(--green)}
+.count{color:var(--t2);font-size:13px;margin:4px 0 8px}
+.feed div{font-size:13px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.killed{text-decoration:line-through;text-decoration-color:var(--red);color:var(--t3)!important}
+.strips{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0}
+.strips i{height:6px;border-radius:3px;background:var(--c2)}.strips i.g{background:var(--green)}.strips i.r{background:var(--red)}
+.ring{font-weight:700}
+.pills .pill{margin-right:6px;font-family:ui-monospace,"SF Mono",monospace;font-weight:500}
+.pr{background:rgba(255,69,58,.18);color:var(--red)}.pg{background:rgba(0,211,90,.18);color:var(--green)}
+.list{background:var(--c1);border-radius:16px}
+.row{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:.5px solid var(--sep);min-height:44px}
+.row:last-child{border-bottom:0}.row .m{flex:1;min-width:0}.row .t{font-weight:600}.row .s{color:var(--t2);font-size:13px}
+.row .v{text-align:right;font-size:14px}
+.fomo{color:var(--blue);font-size:13px;text-decoration:none;white-space:nowrap}
+.empty{color:var(--t2);text-align:center;padding:28px 0}
+.sk{background:var(--c1);border-radius:12px;animation:pulse 1.2s infinite alternate}
+@keyframes pulse{from{opacity:.5}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+background:rgba(22,22,24,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:.5px solid var(--sep);z-index:10}
+.tabbar button{min-width:64px;min-height:44px;border:0;background:none;color:var(--t2);font-size:11px}
+.tabbar button.on{color:var(--text)}
+.sheet{position:fixed;inset:0;background:#000;z-index:20;overflow:auto;display:none;padding:calc(8px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+.sheet.on{display:block}
+.back{min-height:44px;border:0;background:none;color:var(--blue);font-size:17px;padding:0}
+.discs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.disc{aspect-ratio:1;border-radius:50%;background:var(--c1);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;text-align:center;padding:6px;position:relative}
+.disc b{font-size:18px}.disc.g b{color:var(--green)}.disc.r b{color:var(--red)}
+.disc.beam{box-shadow:0 0 0 2px var(--cyan)}
+.btn{display:block;width:100%;min-height:50px;border-radius:14px;border:0;font-size:17px;font-weight:600;margin-top:10px;text-align:center;line-height:50px;text-decoration:none}
+.btn.p{background:var(--blue);color:#fff}.btn.s{background:var(--c2);color:var(--text)}
+.kv{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}.kv div{background:var(--c1);border-radius:12px;padding:10px;font-size:12px;color:var(--t2)}.kv b{display:block;color:var(--text);font-size:15px}
+.set{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:.5px solid var(--sep);font-size:14px}
+.set input[type=range]{flex:1;margin:0 10px}
+.note{color:var(--t2);font-size:13px;margin:8px 2px}
+.fs{position:fixed;inset:0;background:#000;z-index:30;display:none;touch-action:pinch-zoom}.fs.on{display:block}.fs img{width:100%;height:100%;object-fit:contain}
+.gate{color:var(--t2);text-align:center;padding:40vh 16px 0}
+</style>
 </head>
 <body>
-  <div class="app">
-    <header class="bar">
-      <h1>FOMO Desk</h1>
-      <p class="status" id="status" hidden>
-        <span class="dot" id="dot"></span>
-        <span>آخر تحديث</span>
-        <time id="status-time" dir="ltr"></time>
-      </p>
-    </header>
-    <p class="gate" id="gate" hidden></p>
-    <div id="desk" hidden>
-      <section class="card" aria-label="الرصيد">
-        <p class="eyebrow">الرصيد</p>
-        <p class="cash" id="cash" dir="ltr"></p>
-        <p class="mode paper" id="mode" dir="ltr">PAPER</p>
-      </section>
-      <section class="screen" id="screen-section" hidden>
-        <h2>الشاشة المباشرة</h2>
-        <div class="shot">
-          <img id="screen" alt="الشاشة المباشرة">
-        </div>
-        <p class="shot-time" id="screen-time-row" hidden>
-          <span>آخر تحديث</span>
-          <time id="screen-time" dir="ltr"></time>
-        </p>
-      </section>
-      <ul class="facts" id="extras" hidden></ul>
+<div id="gate" class="gate" hidden></div>
+<main id="app">
+  <div id="err" class="errrow" hidden></div>
+  <section id="tab-home">
+    <div class="nav">
+      <button class="avatar" id="nav-avatar" aria-label="Account"></button>
+      <button class="navtitle" id="nav-title">Grok Bot ›</button>
+      <button class="iconbtn" id="nav-search" aria-label="Search">⌕</button>
+      <button class="iconbtn bell" id="nav-bell" aria-label="Pushes">🔔<i class="dot" id="bell-dot" hidden></i></button>
     </div>
-  </div>
-  <script src="./config.js"></script>
-  <script src="./app.js"></script>
+    <div class="search" id="search"><input id="search-in" placeholder="Name, symbol or mint" autocomplete="off"></div>
+    <div id="search-out"></div>
+    <div id="home-body"></div>
+  </section>
+  <section id="tab-bots" hidden></section>
+  <section id="tab-activity" hidden></section>
+  <section id="tab-account" hidden></section>
+</main>
+<nav class="tabbar">
+  <button data-tab="home" class="on">Home</button><button data-tab="bots">Bots</button>
+  <button data-tab="activity">Activity</button><button data-tab="account">Account</button>
+</nav>
+<div class="sheet" id="sheet"></div>
+<div class="fs" id="fs"><img id="fs-img" alt=""></div>
+<script src="./config.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>

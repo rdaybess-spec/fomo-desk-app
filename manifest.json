@@ -1,8 +1,8 @@
 {
   "name": "FOMO Desk",
   "short_name": "Desk",
-  "lang": "ar",
-  "dir": "rtl",
+  "lang": "en",
+  "dir": "ltr",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

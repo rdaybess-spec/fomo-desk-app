@@ -1,6 +1,6 @@
 # FOMO Desk
 
-Static iPhone web app (no build, no framework). Arabic, full-screen, black.
+Static iPhone web app (no build, no framework). English, full-screen, black.
 
 Open the one-time private link (`#d=…`). The app saves it on this phone, strips it from the address bar, and polls the desk. A wrong or missing path shows an empty desk.
 
