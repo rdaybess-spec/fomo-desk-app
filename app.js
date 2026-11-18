@@ -29,6 +29,7 @@
   function hm(ts) { return num(ts) ? new Date(ts * 1000).toLocaleTimeString('en-GB', TZ) : '—'; }
   function body(name) { var f = files[name]; return f && f.body ? f.body : null; }
   var HOSTS = { 'https://pump.fun/': 'pump.fun', 'https://fomo.family/': 'FOMO' };
+  var CHART = 'https://dexscreener.com/solana/';   /* live chart embeds written by links.py */
   function hostName(link) {   /* only pump.fun / fomo.family links written by the desk */
     if (typeof link !== 'string') return null;
     for (var p in HOSTS) if (link.indexOf(p) === 0) return HOSTS[p];
@@ -177,6 +178,10 @@
         h('div', { cls: 'm' }, [h('div', { cls: 't', text: 'Copy cash ' + money(cp.cash) }),
           h('div', { cls: 's', text: cp.leaders + ' leaders · ' + cp.open + ' open · ' + cp.closed + ' closed' })]),
         h('div', { cls: 'v', text: (num(cp.pnlUsd) && cp.pnlUsd >= 0 ? '+' : '') + money(cp.pnlUsd), style: 'color:' + (num(cp.pnlUsd) && cp.pnlUsd < 0 ? 'var(--red)' : 'var(--green)') })])]));
+      var coins = cp.coins || [];   /* every coin the copier entered, open first */
+      el.appendChild(h('h2', { text: 'Coins · ' + coins.length }));
+      el.appendChild(coins.length ? h('div', { cls: 'list' }, coins.map(function (r) { return copyRow(r, r.valueUsd !== null && r.valueUsd !== undefined); }))
+        : h('div', { cls: 'empty', text: 'No coins yet' }));
     }
     requestAnimationFrame(function () { drawChart(cv, body('chart.json'), st.multiplier && st.balance ? st.balance / st.multiplier : null); });
   }
@@ -260,9 +265,31 @@
   }
   function copyRow(r, open) {
     var v = open ? money(r.valueUsd) + ' now' : (num(r.pnlUsd) && r.pnlUsd >= 0 ? '+' : '') + money(r.pnlUsd) + (num(r.pnlPct) ? ' (' + pct(r.pnlPct) + ')' : '');
-    return h('div', { cls: 'row' }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: (r.symbol || (r.mint || '').slice(0, 6)) + ' · copying ' + (r.leader || '?') }),
-      h('div', { cls: 's', text: money(r.costUsd) + ' in · ' + hm(open ? r.openedTs : r.closedTs) + (r.reason ? ' · ' + r.reason : '') })]),
+    return h('div', { cls: 'row', onclick: function (e) { if (e.target.tagName !== 'A') openLive(r.mint); } }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: (open ? '🟢 ' : '') + (r.symbol || (r.mint || '').slice(0, 6)) + ' · copying ' + (r.leader || '?') }),
+      h('div', { cls: 's', text: money(r.costUsd) + ' in · bought ' + hm(r.openedTs) + (open ? ' · open' : ' · sold ' + hm(r.closedTs)) + (r.reason ? ' · ' + r.reason : '') })]),
       h('div', { cls: 'v' }, [h('div', { text: v, style: 'color:' + (!open && num(r.pnlUsd) && r.pnlUsd < 0 ? 'var(--red)' : 'var(--text)') }), fomo(r.link)])]);
+  }
+  var liveMint = null;
+  function liveRow(r) {   /* the coin's latest numbers from the copier, refreshed on every publish */
+    var open = r.valueUsd !== null && r.valueUsd !== undefined, pnl = num(r.pnlUsd) ? r.pnlUsd : null;
+    return h('div', { cls: 'note', id: 'live-nums' }, [(open ? 'LIVE · value ' + money(r.valueUsd) : 'Closed · ' + (r.reason || '')) +
+      ' · P&L ' + (pnl !== null && pnl >= 0 ? '+' : '') + money(pnl) + (num(r.pnlPct) ? ' (' + pct(r.pnlPct) + ')' : '') +
+      (num(r.lastPrice) ? ' · price ' + r.lastPrice.toPrecision(4) : '') + (num(r.entryPrice) ? ' · entry ' + r.entryPrice.toPrecision(4) : '') +
+      ' · ' + money(r.costUsd) + ' in at ' + hm(r.openedTs)]);
+  }
+  function findCoin(mint) { var st = body('state.json'), cs = st && st.copy && st.copy.coins || []; return cs.filter(function (c) { return c.mint === mint; })[0]; }
+  function openLive(mint) {
+    var r = findCoin(mint); if (!r) return;
+    liveMint = mint;
+    var kids = [h('h2', {}, [(r.symbol || mint.slice(0, 6)) + ' · copying ' + (r.leader || '?'), h('span', { cls: 'pill paper', text: 'PAPER' })]), liveRow(r)];
+    if (typeof r.chart === 'string' && r.chart.indexOf(CHART) === 0)
+      kids.push(h('iframe', { src: r.chart, style: 'width:100%;height:420px;border:0;border-radius:12px;background:#000', title: 'Live chart' }));
+    kids.push(fomo(r.link));
+    sheet(kids);
+  }
+  function refreshLive() {   /* keep the open coin sheet's numbers live without reloading the chart */
+    var el = $('live-nums'); if (!liveMint || !el || !$('sheet').classList.contains('on')) return;
+    var r = findCoin(liveMint); if (r) el.parentNode.replaceChild(liveRow(r), el);
   }
   function openCopy() {
     sheet([h('div', { cls: 'sk', style: 'height:300px' })]);
@@ -331,6 +358,7 @@
     var p = body('pushes.json'), seen = 0; try { seen = Number(localStorage.getItem('desk_seen_push') || 0); } catch (e) {}
     $('bell-dot').hidden = !(p && (p.rows || []).some(function (r) { return r.ts > seen; }));
     if (tab === 'home') renderHome(); else if (tab === 'bots') renderBots(); else if (tab === 'activity') renderActivity(); else renderAccount();
+    refreshLive();
   }
   window.__desk = { files: files, render: render, go: go, openAudit: openAudit, openCoin: openCoin, openCopy: openCopy, setLoaded: function (v) { loaded = v; }, fail: function (n) { failN = n; retryAt = Date.now() + 9000; } };
   if (!secret && !window.__deskPreview) { $('gate').hidden = false; $('gate').textContent = 'Open the private link once'; $('app').hidden = true; return; }
