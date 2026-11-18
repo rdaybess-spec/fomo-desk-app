@@ -1,6 +1,7 @@
-/* FOMO Desk PWA (STEP 10, plan B). Reads the desk's files from Supabase get_desk with the
-   private data path (#d=… once, then localStorage). Every FOMO link shown here is a "link"
-   field the desk wrote with links.py; this file never builds a FOMO URL. All data is
+/* pump.fun Desk PWA (STEP 10, plan B; platform moved from FOMO to pump.fun 2026-11-18). Reads the
+   desk's files from Supabase get_desk with the private data path (#d=… once, then localStorage).
+   Every pump.fun (or old FOMO) link shown here is a "link" field the desk wrote with links.py;
+   this file never builds a platform URL. All data is
    rendered with textContent (no HTML from data). Never a made-up number. */
 (function () {
   'use strict';
@@ -27,9 +28,15 @@
   function pct(v) { return num(v) ? (v >= 0 ? '+' : '') + v.toFixed(2) + '%' : '—'; }
   function hm(ts) { return num(ts) ? new Date(ts * 1000).toLocaleTimeString('en-GB', TZ) : '—'; }
   function body(name) { var f = files[name]; return f && f.body ? f.body : null; }
-  function fomo(link) {   /* only https://fomo.family links written by the desk */
-    if (typeof link !== 'string' || link.indexOf('https://fomo.family/') !== 0) return null;
-    return h('a', { cls: 'fomo', href: link, target: '_blank', rel: 'noopener', text: 'Open on FOMO' });
+  var HOSTS = { 'https://pump.fun/': 'pump.fun', 'https://fomo.family/': 'FOMO' };
+  function hostName(link) {   /* only pump.fun / fomo.family links written by the desk */
+    if (typeof link !== 'string') return null;
+    for (var p in HOSTS) if (link.indexOf(p) === 0) return HOSTS[p];
+    return null;
+  }
+  function fomo(link) {
+    var n = hostName(link); if (!n) return null;
+    return h('a', { cls: 'fomo', href: link, target: '_blank', rel: 'noopener', text: 'Open on ' + n });
   }
 
   /* ---------------- data ---------------- */
@@ -163,6 +170,14 @@
     el.appendChild(h('h2', {}, ['Activity', h('button', { text: 'See all', onclick: function () { go('activity'); } })]));
     var rows = st.activity5 || [];
     el.appendChild(rows.length ? h('div', { cls: 'list' }, rows.map(actRow)) : h('div', { cls: 'empty', text: 'Nothing yet tonight' }));
+    if (st.copy) {   /* the PAPER copier's own book (copy.db), shown only when the desk published it */
+      var cp = st.copy;
+      el.appendChild(h('h2', {}, ['Copy · PAPER', h('button', { text: 'See all', onclick: openCopy })]));
+      el.appendChild(h('div', { cls: 'list' }, [h('div', { cls: 'row', onclick: openCopy }, [
+        h('div', { cls: 'm' }, [h('div', { cls: 't', text: 'Copy cash ' + money(cp.cash) }),
+          h('div', { cls: 's', text: cp.leaders + ' leaders · ' + cp.open + ' open · ' + cp.closed + ' closed' })]),
+        h('div', { cls: 'v', text: (num(cp.pnlUsd) && cp.pnlUsd >= 0 ? '+' : '') + money(cp.pnlUsd), style: 'color:' + (num(cp.pnlUsd) && cp.pnlUsd < 0 ? 'var(--red)' : 'var(--green)') })])]));
+    }
     requestAnimationFrame(function () { drawChart(cv, body('chart.json'), st.multiplier && st.balance ? st.balance / st.multiplier : null); });
   }
   var imgs = [new Image(), new Image()], front = 0, lastSrc = '';
@@ -208,8 +223,8 @@
     el.appendChild(h('div', { cls: 'list' }, [
       h('div', { cls: 'row' }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: a.mode === 'LIVE' ? 'LIVE' : 'PAPER' }), h('div', { cls: 's', text: 'LIVE: type LIVE in Telegram or the Grok Bot chat (locked until 1 PAPER night + STEP 15)' })])]),
       h('div', { cls: 'row' }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: 'Cash' }), h('div', { cls: 's', text: money(a.cash) })])]),
-      a.profile ? h('a', { cls: 'row fomo', href: a.profile, target: '_blank', rel: 'noopener', text: 'Your FOMO profile' }) : null,
-      h('div', { cls: 'row', onclick: function () { invite(a.invite); } }, [h('div', { cls: 't', text: 'Invite a friend' })]),
+      a.profile ? h('a', { cls: 'row fomo', href: a.profile, target: '_blank', rel: 'noopener', text: 'Your ' + (a.platform || 'pump.fun') + ' profile' }) : null,
+      h('div', { cls: 'row', onclick: function () { invite(a.invite); } }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: 'Invite a friend' }), h('div', { cls: 's', text: a.platform ? 'Platform: ' + a.platform : '' })])]),
       h('div', { cls: 'row' }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: 'Pushes' }), h('div', { cls: 's', text: a.pushes || '' })])]),
       h('div', { cls: 'row' }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: 'Copy picks' }), h('div', { cls: 's', text: a.copyPicks || 'off' })])])]));
     el.appendChild(h('div', { cls: 'note', text: 'Settings: send "set <name> to <value>" in Telegram or the Grok Bot chat. Out of range is refused with the range.' }));
@@ -241,6 +256,24 @@
         discs.appendChild(h('div', { cls: 'disc ' + (l ? (l.pass ? 'g' : 'r') : '') }, [h('b', { text: l ? (l.pass ? '✓' : '✗') : '·' }), h('span', { text: l ? l.value || '' : '' })])); }
       sheet([h('h2', { text: (a.symbol || a.mint.slice(0, 6)) + ' · Audit' }), discs, h('div', { cls: 'note', text: a.social || 'Social: off' }), fomo(a.link)]);
       var d = discs.children, k = 0; (function beam() { if (k > 0) d[k - 1].classList.remove('beam'); if (k < d.length) { d[k].classList.add('beam'); k++; setTimeout(beam, 250); } })();
+    });
+  }
+  function copyRow(r, open) {
+    var v = open ? money(r.valueUsd) + ' now' : (num(r.pnlUsd) && r.pnlUsd >= 0 ? '+' : '') + money(r.pnlUsd) + (num(r.pnlPct) ? ' (' + pct(r.pnlPct) + ')' : '');
+    return h('div', { cls: 'row' }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: (r.symbol || (r.mint || '').slice(0, 6)) + ' · copying ' + (r.leader || '?') }),
+      h('div', { cls: 's', text: money(r.costUsd) + ' in · ' + hm(open ? r.openedTs : r.closedTs) + (r.reason ? ' · ' + r.reason : '') })]),
+      h('div', { cls: 'v' }, [h('div', { text: v, style: 'color:' + (!open && num(r.pnlUsd) && r.pnlUsd < 0 ? 'var(--red)' : 'var(--text)') }), fomo(r.link)])]);
+  }
+  function openCopy() {
+    sheet([h('div', { cls: 'sk', style: 'height:300px' })]);
+    pull(['copy.json']).then(function () {
+      var c = body('copy.json'); if (!c) { sheet([h('div', { cls: 'empty', text: 'Copy is not running' })]); return; }
+      sheet([h('h2', {}, ['Copy', h('span', { cls: 'pill paper', text: 'PAPER' })]),
+        h('div', { cls: 'note', text: 'Cash ' + money(c.cash) + ' of ' + money(c.startCash) + ' · P&L ' + money(c.pnlUsd) + ' · separate from the desk balance' }),
+        h('h2', { text: 'Open copies' }), (c.open || []).length ? h('div', { cls: 'list' }, c.open.map(function (r) { return copyRow(r, true); })) : h('div', { cls: 'empty', text: 'None open' }),
+        h('h2', { text: 'Closed copies' }), (c.closed || []).length ? h('div', { cls: 'list' }, c.closed.map(function (r) { return copyRow(r, false); })) : h('div', { cls: 'empty', text: 'None closed yet' }),
+        h('h2', { text: 'Leaders' }), h('div', { cls: 'list' }, (c.leaders || []).map(function (l) {
+          return h('div', { cls: 'row' }, [h('div', { cls: 'm' }, [h('div', { cls: 't', text: l.username || (l.wallet || '').slice(0, 6) }), h('div', { cls: 's', text: (l.boards || []).join(' · ') })]), fomo(l.link)]); }))]);
     });
   }
   function openCoin(mint) {
@@ -299,7 +332,7 @@
     $('bell-dot').hidden = !(p && (p.rows || []).some(function (r) { return r.ts > seen; }));
     if (tab === 'home') renderHome(); else if (tab === 'bots') renderBots(); else if (tab === 'activity') renderActivity(); else renderAccount();
   }
-  window.__desk = { files: files, render: render, go: go, openAudit: openAudit, openCoin: openCoin, setLoaded: function (v) { loaded = v; }, fail: function (n) { failN = n; retryAt = Date.now() + 9000; } };
+  window.__desk = { files: files, render: render, go: go, openAudit: openAudit, openCoin: openCoin, openCopy: openCopy, setLoaded: function (v) { loaded = v; }, fail: function (n) { failN = n; retryAt = Date.now() + 9000; } };
   if (!secret && !window.__deskPreview) { $('gate').hidden = false; $('gate').textContent = 'Open the private link once'; $('app').hidden = true; return; }
   var timers = [];
   function start() { timers.forEach(clearInterval); timers = []; if (document.hidden || window.__deskPreview) return;
