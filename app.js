@@ -284,8 +284,80 @@
     var kids = [h('h2', {}, [(r.symbol || mint.slice(0, 6)) + ' · copying ' + (r.leader || '?'), h('span', { cls: 'pill paper', text: 'PAPER' })]), liveRow(r)];
     if (typeof r.chart === 'string' && r.chart.indexOf(CHART) === 0)
       kids.push(h('iframe', { src: r.chart, style: 'width:100%;height:420px;border:0;border-radius:12px;background:#000', title: 'Live chart' }));
+    var st = body('state.json');
+    if (!st || st.mode !== 'LIVE') kids.push(cmdBox(r));   /* owner PAPER buttons; never shown in LIVE */
     kids.push(fomo(r.link));
     sheet(kids);
+  }
+
+  /* ---------------- owner PAPER buy / sell: put_cmd (control PIN) -> desk -> cmd.json ---------------- */
+  var CMD_POLL_MS = 3000, CMD_WAIT_MS = 90000;
+  function storedPin() { try { return localStorage.getItem('desk_pin') || ''; } catch (e) { return ''; } }
+  function cmdId() {
+    var a = new Uint8Array(12); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function (_, i) { a[i] = Math.random() * 256; });
+    return 'app' + Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+  function rpc(name, payload) {
+    var cfg = window.DESK_CONFIG || {};
+    return fetch(String(cfg.url || '').replace(/\/+$/, '') + '/rest/v1/rpc/' + name, {
+      method: 'POST', cache: 'no-store',
+      headers: { apikey: cfg.anon, Authorization: 'Bearer ' + cfg.anon, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); });
+  }
+  function cmdBox(r) {
+    var open = r.valueUsd !== null && r.valueUsd !== undefined, sym = r.symbol || (r.mint || '').slice(0, 6);
+    var st = body('state.json'), cp = st && st.copy || {}, ticket = num(cp.ticketUsd) ? cp.ticketUsd : 6;
+    var box = h('div', { cls: 'cmds' }), msg = h('div', { cls: 'note', text: 'PAPER only · fills at a real Jupiter quote, 1% fee · no real money' });
+    function buttons() {
+      clear(box);
+      var row = h('div', { cls: 'cmdrow' }, [h('button', { cls: 'btn g', text: 'PAPER Buy ' + money(ticket).replace('.00', ''), onclick: function () { ask('buy', null, 'PAPER buy ' + money(ticket) + ' more of ' + sym + '?'); } })]);
+      if (open) {
+        row.appendChild(h('button', { cls: 'btn r', text: 'PAPER Sell all', onclick: function () { ask('sell', 100, 'PAPER sell 100% of ' + sym + '?'); } }));
+        row.appendChild(h('button', { cls: 'btn r', text: 'PAPER Sell 50%', onclick: function () { ask('sell', 50, 'PAPER sell 50% of ' + sym + '?'); } }));
+      }
+      box.appendChild(row); box.appendChild(msg);
+    }
+    function ask(action, pctv, question) {   /* confirm step; PIN asked once, then kept on this phone */
+      clear(box);
+      var pin = storedPin(), inp = pin ? null : h('input', { cls: 'pin', type: 'password', inputmode: 'numeric', maxlength: '6', placeholder: 'Control PIN (6 digits)', autocomplete: 'off' });
+      box.appendChild(h('div', { cls: 'note', text: question }));
+      if (inp) box.appendChild(inp);
+      box.appendChild(h('div', { cls: 'cmdrow' }, [
+        h('button', { cls: 'btn ' + (action === 'buy' ? 'g' : 'r'), text: 'Confirm (PAPER)', onclick: function () {
+          var p = pin || (inp && inp.value || '').trim();
+          if (!/^\d{6}$/.test(p)) { if (inp) inp.focus(); return; }
+          send(action, pctv, p);
+        } }),
+        h('button', { cls: 'btn s', text: 'Cancel', onclick: buttons })]));
+      if (inp) inp.focus();
+    }
+    function show(text, bad) { buttons(); msg.textContent = text; msg.style.color = bad ? 'var(--red)' : 'var(--text)'; }
+    function send(action, pctv, pin) {
+      var id = cmdId(), cmd = { id: id, action: action, mint: r.mint, ts: Date.now() / 1000 };
+      if (action === 'sell') cmd.pct = pctv;
+      clear(box); box.appendChild(h('div', { cls: 'note', text: 'Sending PAPER ' + action + '…' }));
+      rpc('put_cmd', { data_path: secret, pin: pin, cmd: cmd }).then(function (res) {
+        if (!res || !res.ok) {
+          var err = (res && res.error) || 'refused';
+          if (err === 'wrong PIN') { try { localStorage.removeItem('desk_pin'); } catch (e) {} }
+          show('Failed · ' + err, true); return;
+        }
+        try { localStorage.setItem('desk_pin', pin); } catch (e) {}
+        if (res.status === 'done' || res.status === 'failed') { show((res.status === 'done' ? 'Done · ' : 'Failed · ') + (res.reason || ''), res.status !== 'done'); return; }
+        show('Sent · waiting for the desk…', false); wait(id, Date.now());
+      }).catch(function () { show('Failed · no connection, nothing sent', true); });
+    }
+    function wait(id, t0) {
+      pull(['cmd.json']).then(function () {
+        var c = body('cmd.json'), row = (c && c.rows || []).filter(function (x) { return x.id === id; })[0];
+        if (row) { show((row.status === 'done' ? 'Done · ' : 'Failed · ') + (row.reason || ''), row.status !== 'done'); pull(['state.json']); return; }
+        if (Date.now() - t0 > CMD_WAIT_MS) { show('No answer from the desk yet · check Coins in a minute', true); return; }
+        setTimeout(function () { wait(id, t0); }, CMD_POLL_MS);
+      });
+    }
+    buttons();
+    return box;
   }
   function refreshLive() {   /* keep the open coin sheet's numbers live without reloading the chart */
     var el = $('live-nums'); if (!liveMint || !el || !$('sheet').classList.contains('on')) return;
